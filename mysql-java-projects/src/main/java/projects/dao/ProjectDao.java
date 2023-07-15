@@ -1,6 +1,7 @@
 package projects.dao;
 
 import java.math.BigDecimal;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +14,7 @@ import projects.entity.entity.Step;
 import projects.exception.DbException;
 import provided.util.DaoBase;
 import java.util.*;
+
 
 
 
@@ -214,5 +216,87 @@ public class ProjectDao extends DaoBase {
 	        } catch (SQLException e) {
 	            throw new DbException(e);
 	}
+	}
+
+/*
+ * Now, complete the code in the project DAO to update the project details. 
+ * The method structure is similar to the insertProject() method. 
+ * You will write the SQL UPDATE statement with the parameter placeholders. 
+ * Then, obtain a Connection and start a transaction. 
+ * Next, you will obtain a PreparedStatement object and set the six parameter values. 
+ * Finally, you will call executeUpdate() on the PreparedStatement and commit the 
+ * transaction.The difference in this method and the  * insert method is that you 
+ * will examine the return * value from executeUpdate(). The executeUpdate()  * method 
+ * returns the number of rows affected by the * UPDATE operation. Since a single row 
+ * is being acted on * (comparing to the primary key in the WHERE clause guarantees this), the return value should be 1. If it is 0 it means that no rows were acted on and the primary key value (project ID) is not found. So, the method returns true if executeUpdate() returns 1 and false if it returns 0.
+ */
+
+	public boolean modifyProjectDetails(Project project) {
+		 // formatter: off
+        String sql = "UPDATE " + PROJECT_TABLE + " SET "
+                + "project_name = ?, "
+                +"estimated_hours = ?, "
+                +"actual_hours = ?, "
+                +"difficulty = ?, "
+                +"notes = ? "
+                +"WHERE project_id = ?";
+        //formatter: on
+
+        try (Connection conn = DbConnection.getConnection()){
+            startTransaction(conn);
+
+            try(PreparedStatement stmt = conn.prepareStatement(sql)) {
+                setParameter(stmt, 1, project.getProjectName(), String.class);
+                setParameter(stmt, 2, project.getEstimatedHours(), BigDecimal.class);
+                setParameter(stmt, 3, project.getActualHours(), BigDecimal.class);
+                setParameter(stmt, 4, project.getDifficulty(), Integer.class);
+                setParameter(stmt, 5, project.getNotes(), String.class);
+                setParameter(stmt, 6, project.getProjectId(), Integer.class);
+
+                boolean modified = stmt.executeUpdate() == 1;
+                commitTransaction(conn);
+
+                return modified;
+            }
+            catch (Exception e) {
+                rollbackTransaction(conn);
+                throw new DbException(e);
+            }
+         }
+         catch (SQLException e){
+            throw new DbException(e);
+        }
+	}
+
+/*
+ * The deleteProject() method in the DAO is very similar to the modifyProjectDetails() 
+ * method. You will first create the SQL DELETE statement. Then, you will obtain the 
+ * Connection and PreparedStatement, and set the project ID parameter on the 
+ * PreparedStatement. Then, you will call executeUpdate() and verify that the return 
+ * value is 1, indicating a successful deletion. Finally, you will commit the 
+ * transaction and return success or failure.
+ */
+
+	public boolean deleteProject(Integer projectId) {
+		 String sql = "DELETE FROM " + PROJECT_TABLE + " WHERE project_id = ?";
+	        
+		 try(Connection conn = DbConnection.getConnection()){
+	            startTransaction(conn);
+
+	     try(PreparedStatement stmt = conn.prepareStatement(sql)){
+	                setParameter(stmt,1, projectId, Integer.class);
+
+	     boolean deleted = stmt.executeUpdate()==1;
+	                commitTransaction(conn);
+	                return deleted;
+	      }
+	     catch (Exception e){
+	          rollbackTransaction(conn);
+	           throw new DbException(e);
+	            }
+	      }
+	      catch (SQLException e){
+	            throw new DbException(e);
+	        }
 	}
 	}     
